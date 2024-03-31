@@ -11,9 +11,11 @@
   "dependencies": {
     "@lit/context": "^1.1.0",
     "iconoir": "^7.5.0",
-    "lit": "^3.1.2"
+    "lit": "^3.1.2",
+    "sortablejs": "^1.15.2"
   },
   "devDependencies": {
+    "@types/sortablejs": "^1.15.8",
     "typescript": "^5.2.2",
     "vite": "^5.2.0"
   }

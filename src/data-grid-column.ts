@@ -11,6 +11,8 @@ import {
     sortableContext
 } from "./context.ts";
 import {DataGrid} from "./data-grid.ts";
+import {pixelsToPercentOfWidth} from "./utils/shared.ts";
+import {watch} from "./utils/watch.ts";
 
 /**
  * Data Grid Column
@@ -19,6 +21,10 @@ import {DataGrid} from "./data-grid.ts";
 @customElement('data-grid-column')
 export class DataGridColumn extends LitElement {
     //#region Properties
+    /**
+     * The index of the column
+     */
+    @property({type: Number}) index!: number;
     /**
      * The alignment of the column
      */
@@ -65,50 +71,63 @@ export class DataGridColumn extends LitElement {
     //#endregion Options
     //#region State
     @state() _resizing = false;
-
-    private get width() {
-        if(this.parentElement?.getRootNode() instanceof ShadowRoot && (this.parentElement.getRootNode() as ShadowRoot).host instanceof DataGrid) {
-            return (this.parentElement.getRootNode() as ShadowRoot).host.getBoundingClientRect().width;
+    @state() width!: number;
+    private get grid(): DataGrid | undefined {
+        return this.parentElement?.getRootNode() instanceof ShadowRoot && (this.parentElement.getRootNode() as ShadowRoot).host instanceof DataGrid ? (this.parentElement.getRootNode() as ShadowRoot).host as DataGrid : undefined;
+    }
+    private get gridWidth() {
+        if(this.grid) {
+            return this.grid.getBoundingClientRect().width;
         } else {
             console.warn('DataGridColumn must be a child of DataGrid');
             return 0;
         }
+    }
 
-    }
-    private pixelsToPercentOfWidth(pixels: number) {
-        return `${(pixels / this.width) * 100}%`
-    }
     //#endregion State
     //#region Lifecycle
     firstUpdated() {
-        const initialWidth = this.dataset.width || this.getBoundingClientRect().width;
-        this.dataset.width = `${this.pixelsToPercentOfWidth(initialWidth as number)}%`;
+            if(this.grid) this.width = this.grid.gridTemplateColumns[this.index];
     }
     //#endregion Lifecycle
+    //#region Watchers
+    @watch('width')
+    handleWidthChange() {
+        this.dataset.width = `${this.width}%`;
+        if(this.grid) {
+            const gridTemplateColumns = [...this.grid.gridTemplateColumns];
+            gridTemplateColumns[this.index] = this.width;
+            this.grid.gridTemplateColumns = gridTemplateColumns;
+        }
+    }
+    //#endregion Watchers
+
     render() {
         return html`
                 <slot></slot>
                 ${this.resizable ? html`
-                    <div class="resize-handle" @pointerdown="${this._onPointerDown}"
+                    <div class="resize-handle" @pointerdown="${this.onResizePointerDown}"
                     ></div>` : ''}
         `
     }
 
-    private _onPointerDown = (event: PointerEvent) => {
+    private onResizePointerDown = (event: PointerEvent) => {
+        const startX = event.clientX;
+        const startWidth = this?.offsetWidth || 0;
+            const onPointerMove = (evt: PointerEvent) => {
+                evt.preventDefault()
+                if (this._resizing) {
+                    this.width = pixelsToPercentOfWidth(Math.max(this.minWidth || 60, startWidth + evt.clientX - startX), this.gridWidth)
+                }
+            }
+            const onPointerUp = () => {
+                    this._resizing = false;
+                    document.removeEventListener('pointermove', onPointerMove)
+                    document.removeEventListener('pointerup', onPointerUp);
+            }
             this._resizing = true;
-            document.addEventListener('pointermove', this._onPointerMove)
-            document.addEventListener('pointerup', this._onPointerUp);
-    }
-    private _onPointerMove = (event: PointerEvent) => {
-        event.preventDefault()
-        if (this._resizing) {
-            this.dataset.width = `${this.pixelsToPercentOfWidth(event.clientX - this.getBoundingClientRect().left)}%`
-            // Resize the column
-        }
-    }
-
-    private _onPointerUp = (event: PointerEvent) => {
-        this._resizing = false;
+            document.addEventListener('pointermove', onPointerMove)
+            document.addEventListener('pointerup', onPointerUp);
     }
 
     static styles = [

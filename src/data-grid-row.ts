@@ -14,7 +14,10 @@ export class DataGridRow extends LitElement {
 
     static styles = css`
         :host {
-            display: contents;
+            display: grid;
+            box-sizing: border-box;
+            grid-template-columns: subgrid;
+            grid-column: 1/-1;
         }
     `
 }
