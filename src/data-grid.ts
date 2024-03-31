@@ -64,10 +64,6 @@ export class DataGrid extends LitElement {
     @state() public gridTemplateColumns: number[] = [];
     //#endregion States
     //#region Lifecycle
-    override firstUpdated() {
-        this.initializeCellWidths();
-    }
-
     override disconnectedCallback() {
         super.disconnectedCallback();
         if(this.sortableColumns) this.sortableColumns.destroy();
@@ -76,13 +72,18 @@ export class DataGrid extends LitElement {
 
     //#endregion Lifecycle
     //#region Cell Resizing
+    @watch('columns')
+    handleColumnsChange() {
+        if(this.columns && this.gridTemplateColumns.length !== this.columns.length) this.initializeCellWidths();
+    }
     @watch('gridTemplateColumns')
     handleGridTemplateColumnsChange() {
         this.style.setProperty('--grid-template-columns', this.gridTemplateColumns.map(v => `minmax(${v}%, auto)`).join(' '));
     }
-    private initializeCellWidths() {
-        this.gridTemplateColumns = this.columns.map((c) => {
-            return c?.minWidth ? pixelsToPercentOfWidth(c?.minWidth, this.getBoundingClientRect().width) : 100 / this.columns.length - 1;
+    private async initializeCellWidths() {
+        this.gridTemplateColumns = this.columns.map((c, index) => {
+            const existingWidth = this.gridTemplateColumns.length > 1 ? this.gridTemplateColumns[index] : undefined;
+            return existingWidth ? existingWidth : c?.minWidth ? pixelsToPercentOfWidth(c?.minWidth, this.getBoundingClientRect().width) : 100 / this.columns.length - 1;
         });
     }
     //#endregion Cell Resizing
@@ -99,7 +100,7 @@ export class DataGrid extends LitElement {
             if(this.sortableRows) this.sortableRows.destroy();
         } else {
                 this.sortableColumns = new Sortable(this.shadowRoot?.querySelector('.head data-grid-row') as HTMLElement, {
-                    handle: '.reorder-handle', // handle's class
+                    handle: '[slot="reorder-handle"]', // handle's class
                     animation: 150,
                     draggable: 'data-grid-column',
                     direction: 'horizontal',
@@ -152,8 +153,8 @@ export class DataGrid extends LitElement {
                     <data-grid-row>
                         ${this.columns.map((column, idx) => html`
                             <data-grid-column .index=${idx}>
-                                ${this.sortable ? html`<div class="reorder-handle"></div>` : ''}
-                                ${column.label}
+                                <div slot="reorder-handle"></div>
+                                ${column?.label}
                             </data-grid-column>
                         `)}
                     </data-grid-row>
@@ -161,8 +162,8 @@ export class DataGrid extends LitElement {
                 <div class="body">
                 ${this.rows.map(row => html`
                     <data-grid-row>
-                        ${this.columns.map(column => html`
-                            <data-grid-cell>${column.render ? column.render(row) : row[column.field]}</data-grid-cell>
+                        ${this.columns.map((column, index) => html`
+                            <data-grid-cell>${column.render ? column.render(row[column.field], index) : row[column.field]}</data-grid-cell>
                         `)}
                     </data-grid-row>
                 `)}
@@ -187,7 +188,7 @@ export class DataGrid extends LitElement {
             grid-column: 1/-1;
         }
         
-        .reorder-handle {
+        [slot="reorder-handle"] {
             cursor: grab;
             display: inline-block;
             width: 16px;
@@ -196,6 +197,12 @@ export class DataGrid extends LitElement {
             margin-right: 4px;
         }
     `
+
+    // override createRenderRoot() {
+    //     DataGrid.
+    //     console.log(DataGrid.styles.toString())
+    //     return this
+    // }
 }
 
 declare global {

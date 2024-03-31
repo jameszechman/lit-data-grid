@@ -17,5 +17,5 @@ export interface Column {
     sortable?: boolean; // Whether the column is sortable, defaults to false
     hideable?: boolean; // Whether the column is hideable, defaults to true
     resizable?: boolean; // Whether the column is resizable, defaults to true
-    render?: (row: Row) => string; // A function to render the cell
+    render?: (row: Row, index: number) => any; // A function to render the cell
 }

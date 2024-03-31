@@ -1,4 +1,4 @@
-import {html, LitElement} from 'lit'
+import {html, LitElement, nothing} from 'lit'
 import {customElement, property, state} from 'lit/decorators.js'
 import {cellBaseStyles, headerBaseStyles, headerResizerStyles} from "./styles.ts";
 import {Column, ColumnAlignment} from "./types.ts";
@@ -54,6 +54,11 @@ export class DataGridColumn extends LitElement {
     @consume({context: filterableContext})
     @property({type: Boolean}) filterable?: Column['filterable'] = false;
     /**
+     * Whether the column is sortable
+     */
+    @consume({context: sortableContext})
+    @property({type: Boolean}) sortable?: Column['sortable'] = false;
+    /**
      * Whether the column is hideable
      */
     @consume({context: hideableContext})
@@ -99,6 +104,7 @@ export class DataGridColumn extends LitElement {
 
     render() {
         return html`
+                ${this.sortable ? html`<slot name="reorder-handle"></slot>` : nothing}
                 <slot></slot>
                 ${this.resizable ? html`
                     <div class="resize-handle" @pointerdown="${this.onResizePointerDown}"
