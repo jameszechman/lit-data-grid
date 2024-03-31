@@ -54,11 +54,6 @@ export class DataGridColumn extends LitElement {
     @consume({context: filterableContext})
     @property({type: Boolean}) filterable?: Column['filterable'] = false;
     /**
-     * Whether the column is sortable
-     */
-    @consume({context: sortableContext})
-    @property({type: Boolean}) sortable?: Column['sortable'] = false;
-    /**
      * Whether the column is hideable
      */
     @consume({context: hideableContext})

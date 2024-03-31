@@ -67,6 +67,13 @@ export class DataGrid extends LitElement {
     override firstUpdated() {
         this.initializeCellWidths();
     }
+
+    override disconnectedCallback() {
+        super.disconnectedCallback();
+        if(this.sortableColumns) this.sortableColumns.destroy();
+        if(this.sortableRows) this.sortableRows.destroy();
+    }
+
     //#endregion Lifecycle
     //#region Cell Resizing
     @watch('gridTemplateColumns')
