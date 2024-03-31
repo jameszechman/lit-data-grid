@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + Lit + TS</title>
+    <link rel="stylesheet" href="./src/index.css" />
+    <script type="module" src="/src/data-grid.ts"></script>
+  </head>
+  <body>
+    <data-grid>
+    </data-grid>
+  <script>
+    const dataGrid = document.querySelector('data-grid');
+    dataGrid.columns = [{field: 'name', label: "Name"}, {field: 'age', label: 'Age'}, {field: 'city', label: 'City'}];
+    dataGrid.rows = [
+      { name: 'John', age: 25, city: 'New York' },
+      { name: 'Jane', age: 24, city: 'Los Angeles' },
+      { name: 'Doe', age: 26, city: 'Chicago' },
+    ];
+  </script>
+  </body>
+</html>
