@@ -6,6 +6,7 @@ import "./data-grid-cell.ts";
 import {Column, Row} from "./types.ts";
 import {provide} from "@lit/context";
 import {
+    dataGridContext,
     editableContext,
     filterableContext,
     hideableContext,
@@ -61,6 +62,7 @@ export class DataGrid extends LitElement {
 
     //#endregion Options
     //#region States
+    @provide({context: dataGridContext}) grid: DataGrid = this;
     @state() public gridTemplateColumns: number[] = [];
     //#endregion States
     //#region Lifecycle

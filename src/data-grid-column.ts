@@ -4,6 +4,7 @@ import {cellBaseStyles, headerBaseStyles, headerResizerStyles} from "./styles.ts
 import {Column, ColumnAlignment} from "./types.ts";
 import {consume} from "@lit/context";
 import {
+    dataGridContext,
     editableContext,
     filterableContext,
     hideableContext,
@@ -72,18 +73,7 @@ export class DataGridColumn extends LitElement {
     //#region State
     @state() _resizing = false;
     @state() width!: number;
-    private get grid(): DataGrid | undefined {
-        function findGrid(el: HTMLElement): DataGrid | undefined {
-            if(el instanceof DataGrid) {
-                return el;
-            } else if(el.parentElement) {
-                return findGrid(el.parentElement);
-            } else {
-                return undefined;
-            }
-        }
-        return findGrid(this.parentElement as HTMLElement);
-    }
+    @consume({context: dataGridContext}) grid!: DataGrid;
     private get gridWidth() {
         if(this.grid) {
             return this.grid.getBoundingClientRect().width;
