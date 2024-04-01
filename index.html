@@ -11,20 +11,31 @@
   <body>
     <data-grid sortable>
     </data-grid>
+    <div id="app"></div>
   <script type="module">
     import { html } from 'lit';
+    import { createRoot } from "react-dom/client";
+    // function DataGrid() {
+    //   return null;
+    // }
+    // createRoot(document.querySelector('#app')).render(
+    //         <DataGrid />);
+    const rows = [
+      { name: 'John', age: 25, city: 'New York' },
+      { name: 'Jane', age: 24, city: 'Los Angeles' },
+      { name: 'Doe', age: 26, city: 'Chicago' },
+    ]
     const dataGrid = document.querySelector('data-grid');
     dataGrid.columns = [
             {field: 'name', label: "Name"},
             {field: 'age', label: 'Age', render: (value) => {
-              return html`<span>${value} years</span>`;
-              }},
+              return html`<span class="age">${value} years</span>`;
+              }
+            },
             {field: 'city', label: 'City'}];
-    dataGrid.rows = [
-      { name: 'John', age: 25, city: 'New York' },
-      { name: 'Jane', age: 24, city: 'Los Angeles' },
-      { name: 'Doe', age: 26, city: 'Chicago' },
-    ];
+    dataGrid.rows = rows;
+
+
   </script>
   </body>
 </html>

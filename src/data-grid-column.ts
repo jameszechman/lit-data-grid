@@ -73,7 +73,16 @@ export class DataGridColumn extends LitElement {
     @state() _resizing = false;
     @state() width!: number;
     private get grid(): DataGrid | undefined {
-        return this.parentElement?.getRootNode() instanceof ShadowRoot && (this.parentElement.getRootNode() as ShadowRoot).host instanceof DataGrid ? (this.parentElement.getRootNode() as ShadowRoot).host as DataGrid : undefined;
+        function findGrid(el: HTMLElement): DataGrid | undefined {
+            if(el instanceof DataGrid) {
+                return el;
+            } else if(el.parentElement) {
+                return findGrid(el.parentElement);
+            } else {
+                return undefined;
+            }
+        }
+        return findGrid(this.parentElement as HTMLElement);
     }
     private get gridWidth() {
         if(this.grid) {

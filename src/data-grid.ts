@@ -77,14 +77,15 @@ export class DataGrid extends LitElement {
         if(this.columns && this.gridTemplateColumns.length !== this.columns.length) this.initializeCellWidths();
     }
     @watch('gridTemplateColumns')
-    handleGridTemplateColumnsChange() {
-        this.style.setProperty('--grid-template-columns', this.gridTemplateColumns.map(v => `minmax(${v}%, auto)`).join(' '));
+    async handleGridTemplateColumnsChange() {
+        this.style.setProperty('--grid-template-columns', this.gridTemplateColumns.map(v => `${v}%`).join(' '));
     }
     private async initializeCellWidths() {
         this.gridTemplateColumns = this.columns.map((c, index) => {
             const existingWidth = this.gridTemplateColumns.length > 1 ? this.gridTemplateColumns[index] : undefined;
             return existingWidth ? existingWidth : c?.minWidth ? pixelsToPercentOfWidth(c?.minWidth, this.getBoundingClientRect().width) : 100 / this.columns.length - 1;
         });
+        await this.handleGridTemplateColumnsChange();
     }
     //#endregion Cell Resizing
     //#region Cell Reordering
@@ -99,7 +100,7 @@ export class DataGrid extends LitElement {
             if(this.sortableColumns) this.sortableColumns.destroy();
             if(this.sortableRows) this.sortableRows.destroy();
         } else {
-                this.sortableColumns = new Sortable(this.shadowRoot?.querySelector('.head data-grid-row') as HTMLElement, {
+                this.sortableColumns = new Sortable(this.querySelector('.head data-grid-row') as HTMLElement, {
                     handle: '[slot="reorder-handle"]', // handle's class
                     animation: 150,
                     draggable: 'data-grid-column',
@@ -122,7 +123,7 @@ export class DataGrid extends LitElement {
                         this.requestUpdate();
                     }
                 });
-                this.sortableRows = new Sortable(this.shadowRoot?.querySelector('.body') as HTMLElement, {
+                this.sortableRows = new Sortable(this.querySelector('.body') as HTMLElement, {
                     animation: 150,
                     draggable: 'data-grid-row',
                     direction: 'vertical',
@@ -146,6 +147,19 @@ export class DataGrid extends LitElement {
             }
     }
     //#endregion Cell Reordering
+    //#region Cell Rendering
+    private renderCell(row: Row, column: Column, index: number) {
+        if(column.render) {
+            // This method OR set main data-table instance to light-dom and use a internal wrapper for styling + shadowDOM functionality
+            const children = column.render(row[column.field], index);
+            return children;
+            // render(html`<div slot="${column.field}-${index}">${children}</div>`, this);
+            // return html`<slot name="${column.field}-${index}"></slot>`
+        } else {
+            return row[column.field];
+        }
+    }
+    //#endregion Cell Rendering
     render() {
         return html`
             <div class="grid">
@@ -160,10 +174,12 @@ export class DataGrid extends LitElement {
                     </data-grid-row>
                 </div>
                 <div class="body">
-                ${this.rows.map(row => html`
+                ${this.rows.map((row, idx) => html`
                     <data-grid-row>
-                        ${this.columns.map((column, index) => html`
-                            <data-grid-cell>${column.render ? column.render(row[column.field], index) : row[column.field]}</data-grid-cell>
+                        ${this.columns.map((column) => html`
+                            <data-grid-cell>
+                                ${this.renderCell(row, column, idx)}
+                            </data-grid-cell>
                         `)}
                     </data-grid-row>
                 `)}
@@ -198,11 +214,16 @@ export class DataGrid extends LitElement {
         }
     `
 
-    // override createRenderRoot() {
-    //     DataGrid.
-    //     console.log(DataGrid.styles.toString())
-    //     return this
-    // }
+    override createRenderRoot() {
+        /**
+         * Rendering this in Light DOM allows for styling to bleed through
+         * from the users stylesheets
+         */
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(DataGrid.styles.toString());
+        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+        return this
+    }
 }
 
 declare global {
