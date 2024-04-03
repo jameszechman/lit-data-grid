@@ -1,4 +1,4 @@
-import {css, html, LitElement} from 'lit'
+import {css, html, LitElement, nothing, render, unsafeCSS} from 'lit'
 import {customElement, property, state} from 'lit/decorators.js'
 import "./data-grid-column.ts";
 import "./data-grid-row.ts";
@@ -16,6 +16,7 @@ import {
 import {pixelsToPercentOfWidth} from "./utils/shared.ts";
 import {watch} from "./utils/watch.ts";
 import Sortable from "sortablejs";
+import {createRef, Ref, ref} from "lit/directives/ref.js";
 /**
  * Data Grid
  *
@@ -32,6 +33,19 @@ export class DataGrid extends LitElement {
      * The rows of the data grid
      */
     @property({type: Array}) rows: Row[] = [];
+    /**
+     * The renderer function for framework agnostic rendering
+     * @param content - The content to render
+     * @param container - The container to render the content in
+     * @returns The rendered content
+     * @example
+     * ```typescript
+     * const renderer = (content: any, container: HTMLElement) => {
+     *    render(content, container);
+     *  }
+     *  ```
+     */
+    @property({type: Function}) renderer?: (content: any, container: HTMLElement) => void;
     //#endregion Properties
     //#region Options
     /**
@@ -150,13 +164,27 @@ export class DataGrid extends LitElement {
     }
     //#endregion Cell Reordering
     //#region Cell Rendering
-    private renderCell(row: Row, column: Column, index: number) {
+    private renderCell(row: Row, column: Column, index: number, cellRef: Ref<Element>) {
         if(column.render) {
-            // This method OR set main data-table instance to light-dom and use a internal wrapper for styling + shadowDOM functionality
-            const children = column.render(row[column.field], index);
-            return children;
-            // render(html`<div slot="${column.field}-${index}">${children}</div>`, this);
-            // return html`<slot name="${column.field}-${index}"></slot>`
+            // this.updateComplete.then(() => {
+                /**
+                 * Add Ability to render children from any framework
+                 */
+                // @ts-ignore - Column is checked above
+                const children = column.render(row[column.field], index);
+                if(children instanceof HTMLElement || children._$litType$) {
+                    return children;
+                } else if (typeof children === 'string') {
+                    return unsafeCSS(children);
+                } else if (typeof children === 'function' && this.renderer) {
+                    const div = document.createElement('div');
+                    this.renderer(children, div);
+                    return div;
+                } else {
+                    return nothing;
+                }
+            // });
+            // return children;
         } else {
             return row[column.field];
         }
@@ -178,11 +206,14 @@ export class DataGrid extends LitElement {
                 <div class="body">
                 ${this.rows.map((row, idx) => html`
                     <data-grid-row>
-                        ${this.columns.map((column) => html`
-                            <data-grid-cell>
-                                ${this.renderCell(row, column, idx)}
+                        ${this.columns.map((column) => {
+                            const cellRef: Ref<Element> = createRef();
+                            return html`
+                            <data-grid-cell ${ref(cellRef)}>
+                                ${this.renderCell(row, column, idx, cellRef)}
                             </data-grid-cell>
-                        `)}
+                        `
+                        })}
                     </data-grid-row>
                 `)}
                 </div>
