@@ -9,7 +9,7 @@ import {
     dataGridContext,
     editableContext,
     filterableContext,
-    hideableContext,
+    hideableContext, reorderContext,
     resizeContext,
     sortableContext
 } from "./context.ts";
@@ -34,7 +34,7 @@ export class DataGrid extends LitElement {
      */
     @property({type: Array}) rows: Row[] = [];
     /**
-     * The renderer function for framework agnostic rendering
+     * The renderer function for framework-agnostic rendering
      * @param content - The content to render
      * @param container - The container to render the content in
      * @returns The rendered content
@@ -73,7 +73,11 @@ export class DataGrid extends LitElement {
      */
     @provide({context: resizeContext})
     @property({type: Boolean}) resizable? = true;
-
+    /**
+     * Whether the grid is reorderable
+     */
+    @provide({context: reorderContext})
+    @property({type: Boolean}) reorderable? = true;
     //#endregion Options
     //#region States
     @provide({context: dataGridContext}) grid: DataGrid = this;
@@ -109,10 +113,10 @@ export class DataGrid extends LitElement {
     private sortableRows?: Sortable;
     private colBefore?: ChildNode | null;
     private rowBefore?: ChildNode | null;
-    @watch('sortable')
+    @watch('reorderable')
     async handleSortableColumnChange() {
         await this.updateComplete;
-        if(!this.sortable) {
+        if(!this.reorderable) {
             if(this.sortableColumns) this.sortableColumns.destroy();
             if(this.sortableRows) this.sortableRows.destroy();
         } else {
@@ -164,7 +168,7 @@ export class DataGrid extends LitElement {
     }
     //#endregion Cell Reordering
     //#region Cell Rendering
-    private renderCell(row: Row, column: Column, index: number, cellRef: Ref<Element>) {
+    private renderCell(row: Row, column: Column, index: number) {
         if(column.render) {
             // this.updateComplete.then(() => {
                 /**
@@ -210,7 +214,7 @@ export class DataGrid extends LitElement {
                             const cellRef: Ref<Element> = createRef();
                             return html`
                             <data-grid-cell ${ref(cellRef)}>
-                                ${this.renderCell(row, column, idx, cellRef)}
+                                ${this.renderCell(row, column, idx)}
                             </data-grid-cell>
                         `
                         })}

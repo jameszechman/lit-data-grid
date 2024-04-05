@@ -7,7 +7,7 @@ import {
     dataGridContext,
     editableContext,
     filterableContext,
-    hideableContext,
+    hideableContext, reorderContext,
     resizeContext,
     sortableContext
 } from "./context.ts";
@@ -42,6 +42,10 @@ export class DataGridColumn extends LitElement {
      * The maximum width the column can be resized too
      */
     @property({type: Number}) maxWidth?: Column['maxWidth'];
+    @property({type: Object}) sort?: {
+        direction: 'asc' | 'desc',
+        index: number
+    };
     //#endregion Properties
     //#region Options
     /**
@@ -69,6 +73,11 @@ export class DataGridColumn extends LitElement {
      */
     @consume({context: resizeContext})
     @property({type: Boolean}) resizable?: Column['resizable'] = true;
+    /**
+     * Whether the column is reorderable
+     */
+    @consume({context: reorderContext})
+    @property({type: Boolean}) reorderable?: boolean = true;
     //#endregion Options
     //#region State
     @state() _resizing = false;
@@ -85,7 +94,19 @@ export class DataGridColumn extends LitElement {
 
     //#endregion State
     //#region Lifecycle
-    firstUpdated() {
+    override connectedCallback() {
+        super.connectedCallback();
+        this.addEventListener('pointerdown', (event: PointerEvent) => {
+            if(this.sortable) {
+                // this.sort = {
+                //     direction: this.sort && this.sort.direction === 'desc' ? 'asc' : this.sort.direction === 'asc' ? ,
+                //     index: this.index
+                // }
+            }
+        }
+    }
+
+    override firstUpdated() {
             if(this.grid) this.width = this.grid.gridTemplateColumns[this.index];
     }
     //#endregion Lifecycle
@@ -103,8 +124,11 @@ export class DataGridColumn extends LitElement {
 
     render() {
         return html`
-                ${this.sortable ? html`<slot name="reorder-handle"></slot>` : nothing}
+                ${this.reorderable ? html`<slot name="reorder-handle"></slot>` : nothing}
                 <slot></slot>
+                ${this.sortable && this.sort ? html`
+                    <div class="sort-indicator" data-sort-direction="${this.sort.direction}"></div>
+                ` : ''}
                 ${this.resizable ? html`
                     <div class="resize-handle" @pointerdown="${this.onResizePointerDown}"
                     ></div>` : ''}
